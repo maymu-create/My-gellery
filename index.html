@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Save Your Day — Demo</title>
+  <style>
+    /* ---------- Base reset ---------- */
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body,#app{height:100%}
+    body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;color:#0f172a}
+
+    /* ---------- Animated background ---------- */
+    .bg {
+      position:fixed;inset:0;z-index:-1;overflow:hidden;
+      background: linear-gradient(120deg,#ffecd2 0%, #fcb69f 30%, #a1c4fd 70%, #c2e9fb 100%);
+      animation: hueShift 12s linear infinite;
+    }
+    @keyframes hueShift{0%{filter:hue-rotate(0deg)}50%{filter:hue-rotate(25deg)}100%{filter:hue-rotate(0deg)}}
+
+    .floaters{position:absolute;inset:0;pointer-events:none}
+    .blob{position:absolute;border-radius:50%;opacity:.35;mix-blend-mode:screen;transform:translate(-50%,-50%);filter:blur(30px)}
+    .blob.b1{width:520px;height:520px;background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.7), rgba(255,0,110,.25));left:10%;top:10%;animation:move1 18s ease-in-out infinite}
+    .blob.b2{width:420px;height:420px;background:radial-gradient(circle at 70% 70%, rgba(255,255,255,.6), rgba(0,180,255,.22));left:85%;top:25%;animation:move2 20s ease-in-out infinite}
+    .blob.b3{width:360px;height:360px;background:radial-gradient(circle at 40% 60%, rgba(255,255,255,.5), rgba(120,255,160,.2));left:60%;top:85%;animation:move3 22s ease-in-out infinite}
+    @keyframes move1{0%{transform:translate(-50%,-50%) translateY(0)}50%{transform:translate(-50%,-50%) translateY(60px)}100%{transform:translate(-50%,-50%) translateY(0)}}
+    @keyframes move2{0%{transform:translate(-50%,-50%) translateX(0)}50%{transform:translate(-50%,-50%) translateX(-80px)}100%{transform:translate(-50%,-50%) translateX(0)}}
+    @keyframes move3{0%{transform:translate(-50%,-50%) translateY(0) rotate(0)}50%{transform:translate(-50%,-50%) translateY(-60px) rotate(20deg)}100%{transform:translate(-50%,-50%) translateY(0) rotate(0)}}
+
+    /* ---------- Layout ---------- */n
+    .container{min-height:100%;display:flex;flex-direction:column}
+
+    /* ---------- Landing ---------- */
+    .landing{flex:1;display:flex;align-items:center;justify-content:center;padding:48px}
+    .card{backdrop-filter: blur(6px);background:rgba(255,255,255,.35);border-radius:18px;padding:48px 36px;text-align:center;box-shadow:0 8px 24px rgba(15,23,42,.12)}
+    .card h1{font-size:28px;margin-bottom:8px}
+    .card p{color:#0f172a88;margin-bottom:18px}
+
+    /* bottom center button */
+    .bottom-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:32px;display:flex;gap:12px;align-items:center}
+    .btn{display:inline-flex;align-items:center;gap:10px;padding:14px 20px;border-radius:999px;border:0;cursor:pointer;font-weight:600;box-shadow:0 6px 18px rgba(2,6,23,.12);transition:transform .16s ease,box-shadow .16s ease}
+    .btn:active{transform:translateY(2px)}
+    .btn-primary{background:linear-gradient(90deg,#ff7aa2,#7cc7ff);color:white}
+
+    /* ---------- Album page ---------- */
+    .albums-page{display:none;flex-direction:column;gap:16px;padding:28px}
+    .top-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .controls{display:flex;gap:8px;align-items:center}
+    .icon-btn{background:rgba(255,255,255,.7);border-radius:10px;padding:8px;cursor:pointer;border:0;display:inline-flex;align-items:center;justify-content:center}
+    .search-add{display:flex;gap:8px;align-items:center}
+    .add-input{border-radius:999px;padding:8px 12px;border:1px solid rgba(15,23,42,.08);min-width:220px}
+
+    .albums-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-top:16px}
+    .album{background:rgba(255,255,255,.7);border-radius:12px;padding:12px;min-height:140px;display:flex;flex-direction:column;gap:8px}
+    .album .title{display:flex;align-items:center;justify-content:space-between}
+    .thumbs{display:flex;gap:8px;flex-wrap:wrap}
+    .thumb{width:72px;height:72px;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#f3f4f6}
+    .thumb img, .thumb video{width:100%;height:100%;object-fit:cover}
+
+    /* note modal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(2,6,23,.45);display:none;align-items:center;justify-content:center}
+    .modal{background:white;border-radius:12px;padding:18px;max-width:760px;width:92%;max-height:86vh;overflow:auto}
+    .modal textarea{width:100%;min-height:160px;padding:12px;border-radius:8px;border:1px solid #e6e9ef}
+
+    /* responsive tweaks */
+    @media (max-width:640px){.card{padding:28px}.add-input{min-width:120px}.thumb{width:56px;height:56px}}
+  </style>
+</head>
+<body>
+  <div class="bg" aria-hidden="true"></div>
+  <div class="floaters" aria-hidden="true">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+  </div>
+
+  <div id="app" class="container">
+    <!-- Landing -->
+    <main class="landing" id="landing">
+      <div class="card">
+        <h1>Save Your Day</h1>
+        <p>Collect moments — photos, videos and notes. Create albums and capture the small things.</p>
+      </div>
+    </main>
+
+    <!-- Albums page -->
+    <section class="albums-page" id="albumsPage">
+      <div class="top-row">
+        <div class="search-add">
+          <input class="add-input" id="newAlbumTitle" placeholder="Type album title and press +" />
+          <button class="icon-btn" id="createAlbumBtn" title="Create album (pencil)"> <!-- pencil -->
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 0 0 0-1.41l-2.34-2.34a1.003 1.003 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="#0f172a"/></svg>
+          </button>
+          <button class="icon-btn" id="noteModeBtn" title="Open note panel (note)"> <!-- note icon -->
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10l5-5V5a2 2 0 0 0-2-2zM17 13H7v-2h10v2zm0-4H7V7h10v2z" fill="#0f172a"/></svg>
+          </button>
+        </div>
+
+        <div class="controls">
+          <label for="albumFileInput" class="icon-btn" title="Add media to selected album">📁</label>
+          <input id="albumFileInput" type="file" accept="image/*,video/*" style="display:none" />
+          <button class="icon-btn" id="goBackBtn" title="Back to landing">⟵</button>
+        </div>
+      </div>
+
+      <div id="albumsGrid" class="albums-grid"></div>
+    </section>
+
+    <!-- bottom bar -->
+    <div class="bottom-bar">
+      <button class="btn btn-primary" id="startBtn">Save your day
+        <svg style="margin-left:6px" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="white" d="M10 17l5-5-5-5v10z"/></svg>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Note modal -->
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <strong>Create Note</strong>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="noteImageInput" type="file" accept="image/*" />
+          <button id="closeModalBtn" class="icon-btn">Close</button>
+        </div>
+      </div>
+      <textarea id="noteText" placeholder="Write something about this moment..."></textarea>
+      <div id="notePreview" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:12px;gap:8px">
+        <button id="saveNoteBtn" class="btn">Save note</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Simple SPA + localStorage-based persistence
+    const landing = document.getElementById('landing')
+    const albumsPage = document.getElementById('albumsPage')
+    const startBtn = document.getElementById('startBtn')
+    const createAlbumBtn = document.getElementById('createAlbumBtn')
+    const newAlbumTitle = document.getElementById('newAlbumTitle')
+    const albumsGrid = document.getElementById('albumsGrid')
+    const albumFileInput = document.getElementById('albumFileInput')
+    const modalBackdrop = document.getElementById('modalBackdrop')
+    const noteModeBtn = document.getElementById('noteModeBtn')
+    const noteImageInput = document.getElementById('noteImageInput')
+    const noteText = document.getElementById('noteText')
+    const notePreview = document.getElementById('notePreview')
+    const saveNoteBtn = document.getElementById('saveNoteBtn')
+    const closeModalBtn = document.getElementById('closeModalBtn')
+    const goBackBtn = document.getElementById('goBackBtn')
+
+    let albums = loadAlbums() // array of {id,title,media: [{type,url}], notes: [{text,images: [url]}]}
+    let selectedAlbumId = null
+    let noteImages = []
+
+    function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+
+    function saveAlbums(){localStorage.setItem('syd_albums',JSON.stringify(albums))}
+    function loadAlbums(){try{return JSON.parse(localStorage.getItem('syd_albums'))||[]}catch(e){return []}}
+
+    function showLanding(){landing.style.display='flex';albumsPage.style.display='none'}
+    function showAlbums(){landing.style.display='none';albumsPage.style.display='flex';renderAlbums()}
+
+    startBtn.addEventListener('click',()=>{showAlbums()})
+
+    // Create album flow
+    createAlbumBtn.addEventListener('click',()=>createAlbum())
+    newAlbumTitle.addEventListener('keydown',e=>{if(e.key==='Enter')createAlbum()})
+
+    function createAlbum(){
+      const title = newAlbumTitle.value.trim() || 'Untitled album'
+      const a = {id:uid(),title,media:[],notes:[]}
+      albums.unshift(a)
+      saveAlbums()
+      newAlbumTitle.value=''
+      renderAlbums()
+      // auto-select the new album
+      selectedAlbumId = a.id
+      scrollToAlbum(a.id)
+    }
+
+    function renderAlbums(){
+      albumsGrid.innerHTML=''
+      if(albums.length===0){albumsGrid.innerHTML='<div style="grid-column:1/-1;color:#0f172a88;padding:18px">No albums yet — create one with the pencil button.</div>'}
+      albums.forEach(album=>{
+        const el = document.createElement('div');el.className='album';el.dataset.id=album.id
+        el.innerHTML = `
+          <div class="title"><strong>${escapeHtml(album.title)}</strong>
+            <div style="display:flex;gap:8px">
+              <button class="icon-btn" data-action="addMedia" title="Add media">＋</button>
+              <button class="icon-btn" data-action="openNotes" title="Open notes">🗒️</button>
+            </div>
+          </div>
+          <div class="thumbs"></div>
+        `
+        const thumbs = el.querySelector('.thumbs')
+        album.media.slice(0,8).forEach(m=>{
+          const t = document.createElement('div');t.className='thumb'
+          if(m.type.startsWith('image')){t.innerHTML=`<img src="${m.url}" alt="img" />`}
+          else{t.innerHTML=`<video src="${m.url}" muted playsinline></video>`}
+          thumbs.appendChild(t)
+        })
+        // if no media, show placeholder
+        if(album.media.length===0){thumbs.innerHTML='<div style="opacity:.6">No media yet</div>'}
+
+        // events
+        el.querySelector('[data-action="addMedia"]').addEventListener('click',()=>{
+          selectedAlbumId = album.id
+          albumFileInput.click()
+        })
+        el.querySelector('[data-action="openNotes"]').addEventListener('click',()=>{
+          selectedAlbumId = album.id
+          openNoteModal()
+        })
+
+        albumsGrid.appendChild(el)
+      })
+    }
+
+    albumFileInput.addEventListener('change',async (e)=>{
+      if(!selectedAlbumId) return alert('Select or create an album first (click the pencil and then + on a card).')
+      const files = Array.from(e.target.files).slice(0,12)
+      for(const f of files){
+        const dataUrl = await fileToDataURL(f)
+        const t = f.type.startsWith('image') ? 'image' : 'video'
+        const album = albums.find(x=>x.id===selectedAlbumId)
+        album.media.unshift({id:uid(),type:t+'/'+(f.type||''),url:dataUrl})
+      }
+      saveAlbums();renderAlbums();albumFileInput.value=''
+    })
+
+    // Note modal
+    function openNoteModal(){noteText.value='';notePreview.innerHTML='';noteImages=[];modalBackdrop.style.display='flex'}
+    function closeNoteModal(){modalBackdrop.style.display='none'}
+    noteModeBtn.addEventListener('click',()=>{selectedAlbumId=null;openNoteModal()})
+    closeModalBtn.addEventListener('click',closeNoteModal)
+    modalBackdrop.addEventListener('click',e=>{if(e.target===modalBackdrop)closeNoteModal()})
+
+    noteImageInput.addEventListener('change',async e=>{
+      const f = e.target.files[0]
+      if(!f) return
+      const url = await fileToDataURL(f)
+      noteImages.push(url)
+      const img = document.createElement('img');img.src=url;img.style.height='76px';img.style.borderRadius='8px';img.style.objectFit='cover';notePreview.appendChild(img)
+      noteImageInput.value=''
+    })
+
+    saveNoteBtn.addEventListener('click',()=>{
+      const text = noteText.value.trim()
+      if(!selectedAlbumId){
+        // create a temporary album called Notes if not exists
+        let notesAlbum = albums.find(a=>a.title==='Notes')
+        if(!notesAlbum){notesAlbum={id:uid(),title:'Notes',media:[],notes:[]};albums.unshift(notesAlbum)}
+        notesAlbum.notes.unshift({id:uid(),text,images:noteImages.slice(),created:Date.now()})
+      } else {
+        const album = albums.find(a=>a.id===selectedAlbumId)
+        album.notes.unshift({id:uid(),text,images:noteImages.slice(),created:Date.now()})
+      }
+      saveAlbums();closeNoteModal();renderAlbums()
+    })
+
+    // helper: convert file to data URL
+    function fileToDataURL(file){
+      return new Promise((res,rej)=>{
+        const r = new FileReader()
+        r.onload = ()=>res(r.result)
+        r.onerror = rej
+        r.readAsDataURL(file)
+      })
+    }
+
+    function scrollToAlbum(id){
+      const el = albumsGrid.querySelector(`[data-id='${id}']`)
+      if(el){el.scrollIntoView({behavior:'smooth',block:'center'})}
+    }
+
+    function escapeHtml(s){return s.replace(/[&<>\"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]))}
+
+    goBackBtn.addEventListener('click',()=>{showLanding()})
+
+    // initial render
+    renderAlbums()
+  </script>
+</body>
+</html>
